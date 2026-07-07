@@ -49,6 +49,44 @@ try:
         else:
             print("All active databases are healthy.")
             
+        # Write to GitHub Actions Job Summary if running in GitHub Actions
+        summary_file = os.environ.get("GITHUB_STEP_SUMMARY")
+        if summary_file:
+            try:
+                with open(summary_file, "a", encoding="utf-8") as sf:
+                    sf.write("### 📊 Database Health Summary\n\n")
+                    sf.write("| Database Name | DB Type | Status | Active Status |\n")
+                    sf.write("| :--- | :---: | :---: | :---: |\n")
+                    for db in data:
+                        name = db.get("nombre", "Unknown")
+                        tipo = db.get("tipo_db", "N/A")
+                        raw_status = db.get("status", "UNKNOWN").upper()
+                        
+                        if raw_status == "OK":
+                            status_str = "🟢 OK"
+                        elif raw_status in ("WARNING", "WARN"):
+                            status_str = "🟡 WARNING"
+                        elif raw_status == "CRITICAL":
+                            status_str = "🔴 CRITICAL"
+                        else:
+                            status_str = "⚪ UNKNOWN"
+                            
+                        active_str = "✔️ Active" if db.get("activa", True) else "❌ Inactive"
+                        sf.write(f"| **{name}** | `{tipo}` | {status_str} | {active_str} |\n")
+                    
+                    sf.write("\n#### Statistics:\n")
+                    sf.write(f"- **Total Configured**: {total_dbs}\n")
+                    sf.write(f"- **Healthy (OK)**: {healthy_dbs_count}\n")
+                    sf.write(f"- **Unhealthy/Unknown**: {len(unhealthy_dbs)}\n")
+                    sf.write(f"- **Inactive**: {inactive_dbs_count}\n\n")
+                    
+                    if unhealthy_dbs:
+                        sf.write("> ⚠️ **Warning**: Found active databases with non-OK status.\n")
+                    else:
+                        sf.write("> 🎉 **All active databases are healthy!**\n")
+            except Exception as se_err:
+                print(f"Error writing to GITHUB_STEP_SUMMARY: {se_err}")
+
         sys.exit(0)
 except Exception as e:
     print(f"Error connecting to database health API: {e}")
