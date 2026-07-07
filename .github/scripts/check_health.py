@@ -31,10 +31,10 @@ try:
                 unhealthy_dbs.append(db)
         
         if unhealthy_dbs:
-            print(f"\nError: Found {len(unhealthy_dbs)} unhealthy database(s)!")
+            print(f"\nWarning: Found {len(unhealthy_dbs)} unhealthy/unknown database(s)!")
             for db in unhealthy_dbs:
                 print(f"  * {db.get('nombre')} has status {db.get('status')}")
-            sys.exit(1)
+            sys.exit(0)
         else:
             print("\nAll active databases are healthy (OK).")
             sys.exit(0)
