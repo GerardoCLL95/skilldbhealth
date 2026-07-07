@@ -20,24 +20,36 @@ try:
             sys.exit(1)
         data = json.loads(response.read().decode())
         
-        unhealthy_dbs = []
-        print("\nDatabase Health Status:")
+        total_dbs = len(data)
+        healthy_dbs_count = sum(1 for db in data if db.get("status") == "OK" and db.get("activa", True))
+        unhealthy_dbs = [db for db in data if db.get("activa", True) and db.get("status") != "OK"]
+        inactive_dbs_count = sum(1 for db in data if not db.get("activa", True))
+        
+        print("\n========================================")
+        print("         DATABASE HEALTH SUMMARY")
+        print("========================================")
+        print(f"Total Configured : {total_dbs}")
+        print(f"Healthy (OK)     : {healthy_dbs_count}")
+        print(f"Unhealthy/Unk    : {len(unhealthy_dbs)}")
+        print(f"Inactive         : {inactive_dbs_count}")
+        print("----------------------------------------")
+        print("Database Details:")
+        
         for db in data:
             name = db.get("nombre", "Unknown")
-            status = db.get("status", "UNKNOWN")
-            is_active = db.get("activa", True)
-            print(f" - {name}: {status} (Active: {is_active})")
-            if is_active and status != "OK":
-                unhealthy_dbs.append(db)
+            status = db.get("status", "UNKNOWN").upper()
+            tipo = db.get("tipo_db", "N/A")
+            active = "Active" if db.get("activa", True) else "Inactive"
+            print(f" [{status}] {name} ({tipo}) - {active}")
+            
+        print("========================================\n")
         
         if unhealthy_dbs:
-            print(f"\nWarning: Found {len(unhealthy_dbs)} unhealthy/unknown database(s)!")
-            for db in unhealthy_dbs:
-                print(f"  * {db.get('nombre')} has status {db.get('status')}")
-            sys.exit(0)
+            print(f"Warning: Found {len(unhealthy_dbs)} unhealthy/unknown database(s) in active state.")
         else:
-            print("\nAll active databases are healthy (OK).")
-            sys.exit(0)
+            print("All active databases are healthy.")
+            
+        sys.exit(0)
 except Exception as e:
     print(f"Error connecting to database health API: {e}")
     sys.exit(1)
