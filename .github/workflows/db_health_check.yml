@@ -25,47 +25,4 @@ jobs:
         env:
           DB_HEALTH_TOKEN: ${{ secrets.DB_HEALTH_TOKEN }}
         run: |
-          python -c '
-          import urllib.request
-          import json
-          import os
-          import sys
-
-          token = os.environ.get("DB_HEALTH_TOKEN")
-          if not token:
-              print("Error: DB_HEALTH_TOKEN secret is not configured in the repository.")
-              sys.exit(1)
-
-          url = "http://38.250.116.71:5000/api/datasources"
-          req = urllib.request.Request(url)
-          req.add_header("Authorization", f"Bearer {token}")
-
-          try:
-              with urllib.request.urlopen(req, timeout=15) as response:
-                  if response.status != 200:
-                      print(f"Error: API returned status code {response.status}")
-                      sys.exit(1)
-                  data = json.loads(response.read().decode())
-                  
-                  unhealthy_dbs = []
-                  print("Database Health Status:")
-                  for db in data:
-                      name = db.get("nombre", "Unknown")
-                      status = db.get("status", "UNKNOWN")
-                      is_active = db.get("activa", True)
-                      print(f" - {name}: {status} (Active: {is_active})")
-                      if is_active and status != "OK":
-                          unhealthy_dbs.append(db)
-                  
-                  if unhealthy_dbs:
-                      print(f"\nError: Found {len(unhealthy_dbs)} unhealthy database(s)!")
-                      for db in unhealthy_dbs:
-                          print(f"  * {db.get(\"nombre\")} has status {db.get(\"status\")}")
-                      sys.exit(1)
-                  else:
-                      print("\nAll active databases are healthy (OK).")
-                      sys.exit(0)
-          except Exception as e:
-              print(f"Error connecting to database health API: {e}")
-              sys.exit(1)
-          '
+          python .github/scripts/check_health.py
